@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  go2rtc:
+    image: alexxit/go2rtc
+    privileged: true         # only for FFmpeg hardware transcoding
+    restart: unless-stopped  # autorestart on fail or config change from WebUI
+    volumes:
+      - "./config:/config"  
+    ports:
+      - "1985:1984"   
+  
+  xinet-logger:
+    image: oi-xinet-logger:latest
+    build:
+      context: .
+      dockerfile: Dockerfile-logger
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace:cached
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "9092:8080"
+
+  xinet:
+    build:
+      context: .
+      dockerfile: Dockerfile-xinet
+    image: oi-xinet-pose-test:latest
+    # working_dir: /workspace
+    volumes:
+      - ./:/workspace:cached
+    environment:
+      PYTHONPATH: /workspace
+      NUCLIO_PYTHON_WRAPPER_PATH: /workspace/_nuclio_wrapper.py
+    command: ["/opt/nuclio/processor", "--config=/workspace/xinet-openinference-processor.yaml"]
+    ports:
+      - "8082:8080"
+      - "9002:9000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8080/v2/health/live')"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 15s      
+
+networks:
+  default:
+    driver: bridge

@@ -1,0 +1,2 @@
+streams:
+  example: ffmpeg:/config/8281164-hd_1080_1920_24fps.mp4#video=mjpeg

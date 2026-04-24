@@ -1,0 +1,5 @@
+FROM ghcr.io/scc-digitalhub/digitalhub-serverless/python-runtime:3.13-0.15.0b26
+USER root
+RUN apt-get update
+RUN apt-get install -y libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 libfontconfig1 libice6
+RUN pip install opencv-python==4.13.0.92 numpy==2.4.3 onnxruntime==1.24.3 matplotlib==3.10.8

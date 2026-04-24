@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xinet Live Stream</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        .live-badge {
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-top: 10px;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 49%, 100% { opacity: 1; }
+            50%, 99% { opacity: 0.5; }
+        }
+        .stream-container {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        .stream-info {
+            padding: 20px;
+            background: #f9f9f9;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .image-name {
+            font-size: 0.95em;
+            color: #666;
+            word-break: break-all;
+            flex: 1;
+        }
+        .last-update {
+            font-size: 0.85em;
+            color: #999;
+            white-space: nowrap;
+            margin-left: 20px;
+        }
+        .image-wrapper {
+            width: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 16/9;
+            overflow: hidden;
+            position: relative;
+        }
+        .image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .loading {
+            position: absolute;
+            color: white;
+            font-size: 1.2em;
+        }
+        .stats {
+            padding: 20px;
+            background: #f9f9f9;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .stat-box {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 0.85em;
+            color: #999;
+            margin-top: 5px;
+        }
+        .gallery-link {
+            display: inline-block;
+            width: 100%;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.05em;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            margin-top: 20px;
+        }
+        .gallery-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: white;
+        }
+        .empty-state-icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+        }
+        .empty-state h2 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+        .empty-state p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📹 Xinet Live Stream</h1>
+            <p>Ultima acquisizione in tempo reale</p>
+            <div class="live-badge">🔴 LIVE</div>
+        </div>
+
+        <div id="stream-content" class="stream-container" style="display: none;">
+            <div class="stream-info">
+                <span class="image-name" id="image-name">--</span>
+                <span class="last-update" id="last-update">--:--</span>
+            </div>
+            <div class="image-wrapper">
+                <img id="stream-image" src="" alt="Stream" style="display: none;">
+                <div class="loading" style="display: none;" id="loading">Caricamento...</div>
+            </div>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-value" id="total-images">0</div>
+                    <div class="stat-label">Totale immagini</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="fps">0</div>
+                    <div class="stat-label">FPS</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="empty-state" class="empty-state">
+            <div class="empty-state-icon">🖼️</div>
+            <h2>Nessuna immagine disponibile</h2>
+            <p>Le immagini appariranno qui quando verranno acquisite...</p>
+        </div>
+
+        <a href="/gallery" class="gallery-link">📸 Visualizza Galleria Completa</a>
+    </div>
+
+    <script>
+        let lastImage = null;
+        let lastUpdateTime = null;
+        let frameCount = 0;
+        let fpsStartTime = Date.now();
+        let allImagesCount = 0;
+
+        async function loadLatestImage() {
+            try {
+                const response = await fetch('/api/latest-image');
+                const data = await response.json();
+                
+                console.log('API Response:', data);
+                
+                if (data.image) {
+                    const imageName = data.image;
+                    
+                    // Se è una nuova immagine
+                    if (imageName !== lastImage) {
+                        lastImage = imageName;
+                        frameCount++;
+                        
+                        // Calcola FPS
+                        const now = Date.now();
+                        const elapsed = (now - fpsStartTime) / 1000;
+                        if (elapsed >= 1) {
+                            const fps = Math.round(frameCount / elapsed);
+                            document.getElementById('fps').textContent = fps;
+                            frameCount = 0;
+                            fpsStartTime = now;
+                        }
+                    }
+                    
+                    // Aggiorna l'immagine
+                    const img = document.getElementById('stream-image');
+                    img.style.display = 'block';  // Mostra l'immagine
+                    img.src = `/images/${encodeURIComponent(imageName)}?t=${Date.now()}`;
+                    
+                    // Aggiorna le info
+                    document.getElementById('image-name').textContent = imageName;
+                    document.getElementById('last-update').textContent = new Date().toLocaleTimeString('it-IT');
+                    document.getElementById('total-images').textContent = data.total;
+                    
+                    // Mostra il contenuto se nascosto
+                    if (document.getElementById('stream-content').style.display === 'none') {
+                        document.getElementById('stream-content').style.display = 'block';
+                        document.getElementById('empty-state').style.display = 'none';
+                    }
+                } else {
+                    // Nessuna immagine disponibile
+                    document.getElementById('stream-content').style.display = 'none';
+                    document.getElementById('empty-state').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Errore nel caricamento:', error);
+            }
+        }
+
+        // Carica subito
+        loadLatestImage();
+
+        // Aggiorna ogni 1000ms per avere un refresh più fluido
+        setInterval(loadLatestImage, 1000);
+    </script>
+</body>
+</html>

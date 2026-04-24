@@ -1,0 +1,44 @@
+input:
+  kind: "mjpeg"
+  spec:
+    url: "http://localhost:1985/api/stream.mjpeg?src=example"
+    frame_interval: 60    
+    read_timeout: 10
+
+output:
+  kind: "stdout"
+  spec: {}
+
+flow:
+  type: "sequence"
+  name: "xinet-pipeline"
+  nodes:
+    - type: "service"
+      name: "xinet-pose-service"
+      config:
+        kind: "openinference"
+        spec:
+          address: "localhost:9002"
+          model_name: "XiNet-s-pose-224"
+          num_instances: 1  
+          timeout: 15   
+
+          input_tensor_spec:
+            - name: "image"
+              datatype: "UINT8"
+              shape: [-1, -1]
+          
+          output_tensor_spec:
+            - name: "image"
+              datatype: "UINT8"
+              shape: [-1, -1]
+                    
+    - type: "service"
+      name: "xinet-logger"
+      config:
+        kind: "http"
+        spec:
+          url: "http://localhost:9092/image?store_files=false"
+          method: "POST"
+          headers: {"Content-Type": "application/json"}
+  

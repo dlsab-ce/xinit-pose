@@ -1,7 +1,7 @@
 input:
   kind: "mjpeg"
   spec:
-    url: "http://source:1985/api/stream.mjpeg?src=example"
+    url: "http://source:1984/api/stream.mjpeg?src=example"
     frame_interval: 60    
     read_timeout: 30
 
@@ -20,7 +20,7 @@ flow:
       config:
         kind: "openinference"
         spec:
-          address: "xinet-pose:9002"
+          address: "xinet-pose:9000"
           model_name: "XiNet-s-pose"
           num_instances: 1  
           timeout: 15   

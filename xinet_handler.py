@@ -22,7 +22,7 @@ def init_model(context):
     """Initialize face detection models at server startup."""
     # Fallback to Haar Cascade (comes with OpenCV)
     context.logger.info("Loading XiNet pose model...")
-    session = ort.InferenceSession('/workspace/XiNet-s-pose-224.onnx', providers=['CPUExecutionProvider'])
+    session = ort.InferenceSession('XiNet-s-pose-224.onnx', providers=['CPUExecutionProvider'])
     input_name = session.get_inputs()[0].name
     setattr(context, "session", session)
     setattr(context, "input_name", input_name)

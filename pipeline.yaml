@@ -1,13 +1,15 @@
 input:
   kind: "mjpeg"
   spec:
-    url: "http://localhost:1985/api/stream.mjpeg?src=example"
+    url: "http://source:1985/api/stream.mjpeg?src=example"
     frame_interval: 60    
-    read_timeout: 10
+    read_timeout: 30
 
 output:
-  kind: "stdout"
-  spec: {}
+  kind: "mjpeg"
+  spec: 
+    port: 7777
+    path: "/stream"
 
 flow:
   type: "sequence"
@@ -18,8 +20,8 @@ flow:
       config:
         kind: "openinference"
         spec:
-          address: "localhost:9002"
-          model_name: "XiNet-s-pose-224"
+          address: "xinet-pose:9002"
+          model_name: "XiNet-s-pose"
           num_instances: 1  
           timeout: 15   
 
@@ -32,13 +34,7 @@ flow:
             - name: "image"
               datatype: "UINT8"
               shape: [-1, -1]
-                    
-    - type: "service"
-      name: "xinet-logger"
-      config:
-        kind: "http"
-        spec:
-          url: "http://localhost:9092/image?store_files=false"
-          method: "POST"
-          headers: {"Content-Type": "application/json"}
+          
+          output_template: |
+            {{. | jp "$.outputs[0].data" | raw}}
   

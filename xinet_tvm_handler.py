@@ -5,15 +5,14 @@ This microservice provides HTTP endpoints for anonymizing images by detecting
 and blurring faces (and optionally license plates). It integrates with the
 digitalhub-servicegraph framework for real-time video stream processing.
 """
-from curses import meta
 import json
 import numpy as np
-import urllib
 import cv2
 import matplotlib.cm as cm
 import onnxruntime as ort
 import yolo_nms
 import nuclio_sdk
+import urllib.request
 
 IMG_SZ=(224,224)
 
@@ -47,11 +46,17 @@ def model_inference(context, input=None):
     _, _, height, width = spec["shape"] 
     # call the Open Inference v2 endpoint
     body = {"inputs": [{"name": spec["name"], "datatype": "FP32",
-                        "shape": list(input.shape), "data": input.ravel().tolist()}]}
+                        "shape": list(input.shape)}]}
+    context.logger.info(f"body tvm request:{body}")
+    body["inputs"][0]["data"] = input.ravel().tolist()
     request = urllib.request.Request(f"{tvm_func_url}/infer", data=json.dumps(body).encode(),
                                     headers={"Content-Type": "application/json"})
-    result = json.load(urllib.request.urlopen(request, timeout=300))
-    return result["outputs"][0]["data"]
+    tvm_url = urllib.request.urlopen(request, timeout=300)
+    context.logger.info(f"Status Code: {tvm_url.getcode()}")
+    result = json.load(tvm_url)
+    output = result["outputs"][0]
+    pred = np.asarray(output["data"], dtype=np.float32).reshape(output["shape"])    
+    return pred
 
 
 def post_process_multi(img, output, score_threshold=10):
@@ -89,7 +94,7 @@ def handler(context, request):
     Expects: Image bytes in request body
     
     Returns: Image with detected keypoints
-    """            
+    """     
     try:
         # Get image from request body
         context.logger.info(f"request: {type(request)}")
@@ -105,7 +110,7 @@ def handler(context, request):
         # Convert bytes to OpenCV image
         nparr = np.frombuffer(image_bytes, np.uint8)
         image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        context.logger.info(f"image to process {len(image)}")
+        context.logger.info(f"array to process {len(image)}")
     
         if image is None:
             raise ValueError("Failed to decode image")
@@ -113,7 +118,7 @@ def handler(context, request):
         image = cv2.resize(image, IMG_SZ)
         input_img = preprocess_img(image)
         output = model_inference(context, input_img)
-        context.logger.info(f"get inference {len(output[0])}")
+        context.logger.info(f"get inference {output.shape}")
         
         # frame = post_process_single(frame, output[0], score_threshold=0.2)
         image = post_process_multi(image, output[0], score_threshold=0.2)
